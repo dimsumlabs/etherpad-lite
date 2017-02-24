@@ -208,6 +208,7 @@ exports.trustProxy = false;
 exports.requireAuthentication = false;
 exports.requireAuthorization = false;
 exports.users = {};
+exports.auth_remote = false;
 
 /*
 * Show settings in admin page, by default it is true
