@@ -222,18 +222,12 @@ exports.handleMessage = function(client, message)
       } else if (message.data.type == "USER_CHANGES") {
         stats.counter('pendingEdits').inc()
         padChannels.emit(message.padId, {client: client, message: message});// add to pad queue
-      } else if (message.data.type == "USERINFO_UPDATE") {
-        handleUserInfoUpdate(client, message);
       } else if (message.data.type == "CHAT_MESSAGE") {
         handleChatMessage(client, message);
       } else if (message.data.type == "GET_CHAT_MESSAGES") {
         handleGetChatMessages(client, message);
       } else if (message.data.type == "SAVE_REVISION") {
         handleSaveRevisionMessage(client, message);
-      } else if (message.data.type == "CLIENT_MESSAGE" &&
-                 message.data.payload != null &&
-                 message.data.payload.type == "suggestUserName") {
-        handleSuggestUserName(client, message);
       } else {
         messageLogger.warn("Dropped message, unknown COLLABROOM Data  Type " + message.data.type);
       }
@@ -936,7 +930,7 @@ function handleSwitchToPad(client, message)
   var currentSession = sessioninfos[client.id];
   var padId = currentSession.padId;
   var roomClients = _getRoomClients(padId);
-  
+
   async.forEach(roomClients, function(client, callback) {
     var sinfo = sessioninfos[client.id];
     if(sinfo && sinfo.author == currentSession.author) {
@@ -998,7 +992,6 @@ function handleClientReady(client, message)
   }
 
   var author;
-  var authorName;
   var authorColorId;
   var pad;
   var historicalAuthorData = {};
@@ -1006,6 +999,8 @@ function handleClientReady(client, message)
   var padIds;
 
   hooks.callAll("clientReady", message);
+
+  var authorName = client["handshake"]["headers"]["x-forwarded-user"];
 
   async.series([
     //Get ro/rw id:s
@@ -1048,12 +1043,12 @@ function handleClientReady(client, message)
       async.parallel([
         //get colorId and name
         function(callback)
-        {
+          {
+          authorManager.setAuthorName(author, authorName);
           authorManager.getAuthor(author, function(err, value)
           {
             if(ERR(err, callback)) return;
             authorColorId = value.colorId;
-            authorName = value.name;
             callback();
           });
         },
@@ -1115,7 +1110,7 @@ function handleClientReady(client, message)
 
       //Check if this author is already on the pad, if yes, kick the other sessions!
       var roomClients = _getRoomClients(pad.id);
-      
+
       async.forEach(roomClients, function(client, callback) {
         var sinfo = sessioninfos[client.id];
         if(sinfo && sinfo.author == author) {
@@ -1676,13 +1671,13 @@ function composePadChangesets(padId, startNum, endNum, callback)
 
 function _getRoomClients(padID) {
   var roomClients = []; var room = socketio.sockets.adapter.rooms[padID];
-  
+
   if (room) {
     for (var id in room.sockets) {
       roomClients.push(socketio.sockets.sockets[id]);
     }
   }
-  
+
   return roomClients;
 }
 

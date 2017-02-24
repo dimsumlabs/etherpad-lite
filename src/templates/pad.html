@@ -422,5 +422,13 @@
             // @license-end
         </script>
         <div style="display:none"><a href="/javascript" data-jslicense="1">JavaScript license information</a></div>
+        <script type="text/javascript">
+         // Ugly hack to disable editing of own username
+         $(document).ready(function() {
+             setTimeout(function(){
+                 $("#myusernameedit").removeClass("editable").attr("disabled", true);
+             }, 2000);
+         });
+        </script>
         <% e.end_block(); %>
 </html>
